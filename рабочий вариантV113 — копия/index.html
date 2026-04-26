@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовый контролер - Карты и Вклады</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #1e2a3a; font-size: 1.8rem; margin-bottom: 10px; }
+        
+        /* Общая сводка (над вкладками) */
+        .total-networth {
+            background: linear-gradient(135deg, #2c3e50, #1e2a3a);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .networth-item {
+            background: rgba(255,255,255,0.15);
+            padding: 8px 15px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+        .networth-item .label { font-size: 11px; opacity: 0.8; margin-bottom: 5px; }
+        .networth-item .value { font-size: 18px; font-weight: bold; }
+        .networth-item .value.positive { color: #2ecc71; }
+        .networth-item .value.negative { color: #e74c3c; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn { background: #bdc3c7; padding: 10px 25px; border-radius: 8px 8px 0 0; cursor: pointer; border: none; font-size: 16px; }
+        .tab-btn.active { background: #2c3e50; color: white; }
+        .tab-content { display: none; background: white; border-radius: 0 12px 12px 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .tab-content.active { display: block; }
+        .toolbar { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        button { background: #2c3e50; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: background 0.2s; }
+        button:hover { background: #1e2a3a; }
+        .btn-primary { background: #27ae60; }
+        .btn-primary:hover { background: #2ecc71; }
+        .btn-danger { background: #c0392b; }
+        .btn-danger:hover { background: #e74c3c; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: auto; }
+        th, td { padding: 4px 8px; text-align: left; border-bottom: 1px solid #ddd; vertical-align: middle; }
+        th { background: #34495e; color: white; font-weight: 600; cursor: pointer; user-select: none; }
+        th:hover { background: #2c3e50; }
+        tr:hover { background: #f9f9f9; }
+        .progress-container { width: 80px; background: #ecf0f1; border-radius: 10px; overflow: hidden; height: 8px; }
+        .progress-bar { height: 100%; width: 0%; }
+        .days-badge { font-weight: bold; padding: 4px 8px; border-radius: 20px; display: inline-block; text-align: center; min-width: 60px; }
+        .days-negative { background: #e74c3c; color: white; }
+        .days-0-3 { background: #e67e22; color: white; }
+        .days-4-7 { background: #f1c40f; color: #2c3e50; }
+        .days-more { background: #2ecc71; color: white; }
+        .action-icons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .edit-icon, .pay-icon { cursor: pointer; font-size: 18px; }
+        .edit-icon { color: #2980b9; }
+        .delete-icon { color: #c0392b; cursor: pointer; font-size: 18px; }
+        .pay-icon { color: #27ae60; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 16px; width: 500px; max-width: 90%; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .summary { margin-top: 20px; padding: 15px; background: #ecf0f1; border-radius: 12px; display: flex; gap: 30px; flex-wrap: wrap; }
+        .summary-item { background: white; padding: 10px 20px; border-radius: 10px; min-width: 180px; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 15px; }
+        .calendar-day { border: 1px solid #ddd; padding: 10px; min-height: 80px; background: white; border-radius: 8px; }
+        .calendar-day.other-month { background: #f9f9f9; color: #aaa; }
+        .calendar-day.today { background: #e8f4fd; border: 2px solid #2980b9; }
+        .calendar-header { text-align: center; font-weight: bold; padding: 8px; background: #34495e; color: white; border-radius: 6px; }
+        .calendar-event { font-size: 11px; background: #e74c3c; color: white; padding: 2px 4px; border-radius: 4px; margin-top: 4px; cursor: pointer; }
+        .calendar-event.min { background: #e67e22; }
+        .calendar-event.full { background: #2980b9; }
+        .notification-banner { position: fixed; top: 20px; right: 20px; background: #ff9800; color: white; padding: 12px 20px; border-radius: 8px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); max-width: 350px; animation: slideIn 0.3s ease; }
+        .chart-container { max-width: 100%; margin: 20px 0; }
+        canvas { max-height: 400px; width: 100%; }
+        .filter-group { margin: 15px 0; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        
+        /* Стили для карточек вкладов (С прогресс-баром) */
+        .investments-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .investment-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 5px solid;
+        }
+        .investment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .card-actions button {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+        .card-body {
+            padding: 8px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .card-info {
+            flex: 2;
+            min-width: 200px;
+        }
+        .card-stats {
+            flex: 1;
+            min-width: 180px;
+            text-align: right;
+        }
+        .info-row {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #555;
+            width: 100px;
+            display: inline-block;
+        }
+        .info-value {
+            color: #2c3e50;
+        }
+        .progress-time {
+            margin: 10px 0;
+        }
+        .progress-bar-bg {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+        .progress-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        .badge-rate {
+            background: #3498db;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: inline-block;
+        }
+        .badge-days {
+            background: #e67e22;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .comment-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 8px;
+            padding: 5px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+        .view-toggle button {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        .view-toggle button.active {
+            background: #2c3e50;
+            color: white;
+        }
+        
+        /* Стили для Timeline (визуальное распределение по времени) - только в таблице */
+        .timeline-container {
+            margin: 20px 0;
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
+        }
+        .timeline-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .timeline-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .timeline-label {
+            width: 180px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .timeline-track {
+    flex: 1;
+    height: 20px;
+    background: #f0f2f5;
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+        .timeline-track:hover {
+            transform: scaleY(1.1);
+        }
+        .timeline-track::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 8.33%);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .timeline-fill {
+    height: 100%;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 2;
+}
+        .timeline-track:hover::after {
+            content: attr(data-start) ' → ' attr(data-end) ' (' attr(data-passed) '/' attr(data-days) ' дн.)';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 16px;
+            font-size: 10px;
+            white-space: nowrap;
+            z-index: 100;
+            margin-bottom: 6px;
+            pointer-events: none;
+        }
+        .timeline-track-header {
+    display: flex;
+    flex: 1;
+    height: 22px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f8f9fa;
+}
+        
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @media (max-width: 800px) { 
+            th, td { font-size: 11px; padding: 6px 4px; } 
+            .summary-item { min-width: 140px; font-size: 12px; } 
+            .networth-item .value { font-size: 14px; } 
+            .networth-item { min-width: 100px; padding: 5px 10px; } 
+            .card-header { flex-direction: column; align-items: flex-start; } 
+            .card-stats { text-align: left; } 
+            .card-body { flex-direction: column; }
+            .timeline-label { width: 120px; font-size: 10px; }
+            .timeline-track { height: 22px; }
+            .timeline-fill { font-size: 8px; padding-right: 4px; }
+            .timeline-track-header { height: 18px; }
+            .timeline-track-header div { font-size: 8px !important; }
+        }
+/* Выделение только ячеек с названиями карт (без шапки) */
+#cardsTable td:first-child {
+    background-color: #e8f4fd;
+    font-weight: 500;
+    border-radius: 8px 0 0 8px;
+}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>💳 Инвестиции в кредит</h1>
+    
+    <!-- Общая сводка по всем финансам -->
+    <div class="total-networth" id="totalNetworth">
+    <div class="networth-item">
+        <div class="label">💳 Общий долг</div>
+        <div class="value" id="overallDebt">0 ₽</div>
+    </div>
+    <div class="networth-item">
+        <div class="label">💰 Всего вложено</div>
+        <div class="value" id="overallInvested">0 ₽</div>
+    </div>
+    <div class="networth-item">
+        <div class="label">📈 Ожидаемый доход</div>
+        <div class="value" id="overallIncome">0 ₽</div>
+    </div>
+    <div class="networth-item">
+        <div class="label">🏦 Итоговая сумма</div>
+        <div class="value" id="overallTotalReturn">0 ₽</div>
+    </div>
+    <div class="networth-item">
+        <div class="label">📊 Средняя ставка</div>
+        <div class="value" id="overallAvgRate">0%</div>
+    </div>
+    <div class="networth-item">
+        <div class="label">💰 Поступления в месяц</div>
+        <div class="value" id="monthlyIncome">0 ₽</div>
+    </div>
+    <div class="networth-item">
+        <div class="label">⚖️ Чистое состояние</div>
+        <div class="value" id="netWorth">0 ₽</div>
+    </div>
+</div>
+    
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="cards">📋 Карты</button>
+        <button class="tab-btn" data-tab="calendar">📅 Календарь</button>
+        <button class="tab-btn" data-tab="chart">📈 График долга</button>
+        <button class="tab-btn" data-tab="investments">💰 Распределение средств</button>
+    </div>
+
+    <!-- Вкладка Карты -->
+<div id="cardsTab" class="tab-content active">
+    <div class="toolbar">
+        <button id="addCardBtn" class="btn-primary">➕ Добавить карту</button>
+        <button id="enableNotificationsBtn">🔔 Включить уведомления</button>
+        <button id="exportBtn">📥 Экспорт</button>
+        <button id="importDataBtn" class="btn-sm">📁 Импорт с флешки</button>
+        <input type="file" id="importFileInput" style="display:none" accept=".json">
+    </div>
+        <div style="overflow-x: auto;">
+            <table id="cardsTable">
+                <thead>
+                    <tr><th data-sort="name">Название</th><th data-sort="creditLimit">Лимит</th><th data-sort="balance">Долг</th><th>Выписка</th><th>Мин. платёж</th><th data-sort="minDueDate">Дата мин.</th><th>Дней до мин.</th><th data-sort="fullDueDate">Погасить</th><th>Дней до погаш.</th><th>Прогресс</th><th></th></tr>
+                </thead>
+                <tbody id="cardsTableBody"><tr class="empty-row"><td colspan="11">Нет карт. Нажмите «Добавить карту»</td></tr>
+                </tbody>
+             </table>
+        </div>
+        <div class="summary" id="summary">
+            <div class="summary-item">💰 Общий лимит: <strong id="totalLimit">0 ₽</strong></div>
+            <div class="summary-item">💳 Общий долг: <strong id="totalBalance">0 ₽</strong></div>
+            <div class="summary-item">📉 Свободно: <strong id="totalFree">0 ₽</strong></div>
+            <div class="summary-item">⚠️ Мин. платежи в этом месяце: <strong id="totalMinPayments">0 ₽</strong></div>
+        </div>
+    </div>
+
+    <!-- Вкладка Календарь -->
+    <div id="calendarTab" class="tab-content">
+        <h3>📅 Платежи на ближайший месяц</h3>
+        <div id="calendarView"></div>
+    </div>
+
+    <!-- Вкладка График долга -->
+    <div id="chartTab" class="tab-content">
+        <h3>📈 Динамика изменения долга по месяцам</h3>
+        <div class="filter-group">
+            <label>Показать:</label>
+            <select id="chartCardFilter"><option value="all">📊 Все карты (суммарно)</option></select>
+            <button id="refreshChartBtn" class="btn-primary">🔄 Обновить график</button>
+            <button id="resetHistoryBtn" class="btn-sm" style="background:#c0392b;">🗑️ Сбросить историю</button>
+        </div>
+        <div class="chart-container"><canvas id="debtChart"></canvas></div>
+        <p style="color: #7f8c8d; font-size: 12px;">💡 История сохраняется автоматически раз в месяц или при изменении остатка.</p>
+    </div>
+
+    <!-- Вкладка Распределение средств (карточки с прогресс-баром + таблица с Timeline) -->
+    <div id="investmentsTab" class="tab-content">
+        <div class="toolbar">
+            <button id="addInvestmentBtn" class="btn-primary">➕ Добавить вклад</button>
+            <div class="view-toggle">
+                <button id="viewCardsBtn" class="active">📇 Карточки</button>
+                <button id="viewTableBtn">📋 Таблица</button>
+            </div>
+        </div>
+
+        <!-- Карточки вкладов (С ПРОГРЕСС-БАРОМ) -->
+        <div id="investmentsCardsView" class="investments-grid"></div>
+        
+        <!-- Таблица вкладов (с Timeline) - скрыта по умолчанию -->
+        <div id="investmentsTableView" style="display: none;">
+            <!-- Визуальное распределение вкладов по времени (Timeline) - без заголовка -->
+            <div class="timeline-container">
+                <div id="timelineChart" class="timeline-bar"></div>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table class="investment-table" id="investmentsTable">
+                    <thead>
+                        <tr><th>Название</th><th>Сумма (₽)</th><th>Ставка</th><th>Дата начала</th><th>Дата окончания</th><th>Дней</th><th>Доход (₽)</th><th>Итого</th><th></th></tr>
+                    </thead>
+                    <tbody id="investmentsTableBody"><tr class="empty-row"><td colspan="9">Нет вкладов. Нажмите «Добавить вклад»</td></tr>
+                    </tbody>
+                 </table>
+            </div>
+        </div>
+
+        <!-- Круговая диаграмма распределения -->
+        <div class="chart-container" style="max-width: 400px; margin: 20px auto;">
+            <canvas id="investmentsPieChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для карт -->
+<div id="cardModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Добавить карту</h3>
+        <form id="cardForm">
+            <input type="hidden" id="cardId" value="">
+            <div class="form-group"><label>Название карты *</label><input type="text" id="cardName" required></div>
+            <div class="form-group"><label>Кредитный лимит (₽)</label><input type="number" id="creditLimit" step="any" value="0"></div>
+            <div class="form-group"><label>Текущий долг (₽)</label><input type="number" id="balance" step="any" value="0"></div>
+            <div class="form-group"><label>Дата выписки</label><input type="date" id="statementDate"></div>
+            <div class="form-group"><label>Дата минимального платежа</label><input type="date" id="minDueDate" required></div>
+            <div class="form-group"><label>Дата полного погашения</label><input type="date" id="fullDueDate" required></div>
+            <div class="form-group"><label>Сумма минимального платежа (₽)</label><input type="number" id="minPaymentAmount" step="any" value="0"></div>
+            <div class="modal-buttons"><button type="button" id="modalCancel">Отмена</button><button type="submit" class="btn-primary">Сохранить</button></div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно для вкладов -->
+<div id="investmentModal" class="modal">
+    <div class="modal-content">
+        <h3 id="investmentModalTitle">Добавить вклад</h3>
+        <form id="investmentForm">
+            <input type="hidden" id="investmentId" value="">
+            <div class="form-group"><label>Название вклада *</label><input type="text" id="invName" required placeholder="Например: Вклад в банке, Облигации"></div>
+            <div class="form-group"><label>Сумма (₽) *</label><input type="number" id="invAmount" step="any" required></div>
+            <div class="form-group"><label>Процентная ставка (% годовых) *</label><input type="number" id="invRate" step="any" required placeholder="Например: 16"></div>
+            <div class="form-group"><label>Дата начала *</label><input type="date" id="invStartDate" required></div>
+            <div class="form-group"><label>Дата окончания *</label><input type="date" id="invEndDate" required></div>
+            <div class="form-group"><label>Комментарий</label><input type="text" id="invComment" placeholder="Банк, тип вклада и т.д."></div>
+            <div class="modal-buttons"><button type="button" id="investmentModalCancel">Отмена</button><button type="submit" class="btn-primary">Сохранить</button></div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // --- Данные ---
+    let cards = [];
+    let debtHistory = [];
+    let investments = [];
+    let sortField = 'id';
+    let sortDirection = 'asc';
+    let notificationPermission = false;
+    let chartInstance = null;
+    let pieChartInstance = null;
+    let viewMode = 'cards';
+
+    // --- Загрузка / сохранение ---
+    function loadFromStorage() {
+        const storedCards = localStorage.getItem('creditCards');
+        if (storedCards) {
+            try {
+                cards = JSON.parse(storedCards);
+                cards.forEach(c => {
+                    c.statementDate = c.statementDate ? new Date(c.statementDate) : null;
+                    c.minDueDate = new Date(c.minDueDate);
+                    c.fullDueDate = new Date(c.fullDueDate);
+                });
+            } catch(e) { cards = []; }
+        }
+        const storedHistory = localStorage.getItem('debtHistory');
+        if (storedHistory) {
+            try { debtHistory = JSON.parse(storedHistory); } catch(e) { debtHistory = []; }
+        }
+        const storedInvestments = localStorage.getItem('investments');
+        if (storedInvestments) {
+            try {
+                investments = JSON.parse(storedInvestments);
+                investments.forEach(i => {
+                    i.startDate = new Date(i.startDate);
+                    i.endDate = new Date(i.endDate);
+                });
+            } catch(e) { investments = []; }
+        }
+        if (cards.length === 0) {
+            cards = [{ id: 1, name: "Тинькофф Platinum", creditLimit: 100000, balance: 45000, statementDate: new Date(2025, 3, 15), minDueDate: new Date(2026, 4, 25), fullDueDate: new Date(2026, 5, 5), minPaymentAmount: 3000 }];
+        }
+        if (investments.length === 0) {
+            investments = [{ id: 1, name: "Вклад в Банке", amount: 500000, ratePercent: 16, startDate: new Date(2026, 3, 20), endDate: new Date(2026, 5, 20), comment: "Пополняемый" }];
+        }
+        updateCardFilter();
+        renderTable();
+        updateSummary();
+        renderCalendar();
+        checkNearPayments();
+        checkAndSaveMonthlyHistory();
+        renderChart();
+        renderInvestments();
+        updateOverallNetworth();
+    }
+    
+    function saveToStorage() {
+        localStorage.setItem('creditCards', JSON.stringify(cards));
+        localStorage.setItem('debtHistory', JSON.stringify(debtHistory));
+        localStorage.setItem('investments', JSON.stringify(investments));
+        updateSummary();
+        renderCalendar();
+        updateCardFilter();
+        renderChart();
+        renderInvestments();
+        updateOverallNetworth();
+    }
+
+    // --- ОБЩАЯ СВОДКА (над вкладками) ---
+    function updateOverallNetworth() {
+    const totalDebt = cards.reduce((sum, c) => sum + c.balance, 0);
+    const totalInvested = investments.reduce((sum, i) => sum + i.amount, 0);
+    let totalIncome = 0;
+    let weightedRateSum = 0;
+    investments.forEach(i => {
+        const days = Math.ceil((i.endDate - i.startDate) / (1000 * 60 * 60 * 24));
+        if (days > 0) {
+            totalIncome += i.amount * (i.ratePercent / 100) * (days / 365);
+        }
+        weightedRateSum += i.ratePercent * i.amount;
+    });
+    const avgRate = totalInvested > 0 ? weightedRateSum / totalInvested : 0;
+    const totalReturn = totalInvested + totalIncome;
+    const netWorth = totalReturn - totalDebt;
+    const monthlyIncomings = calculateMonthlyIncomings();
+    
+    document.getElementById('overallDebt').innerHTML = totalDebt.toLocaleString('ru-RU') + ' ₽';
+    document.getElementById('overallInvested').innerHTML = totalInvested.toLocaleString('ru-RU') + ' ₽';
+    
+    // Ожидаемый доход - целое число
+    document.getElementById('overallIncome').innerHTML = Math.round(totalIncome).toLocaleString('ru-RU') + ' ₽';
+    
+    document.getElementById('overallTotalReturn').innerHTML = Math.round(totalReturn).toLocaleString('ru-RU') + ' ₽';
+    document.getElementById('overallAvgRate').innerHTML = avgRate.toFixed(2) + '%';
+    document.getElementById('monthlyIncome').innerHTML = monthlyIncomings.toLocaleString('ru-RU') + ' ₽';
+    
+    // Чистое состояние - целое число
+    const netWorthElement = document.getElementById('netWorth');
+    netWorthElement.innerHTML = Math.round(netWorth).toLocaleString('ru-RU') + ' ₽';
+    netWorthElement.className = 'value ' + (netWorth >= 0 ? 'positive' : 'negative');
+}
+// Расчёт поступлений в текущем месяце (только доход от завершающихся вкладов)
+function calculateMonthlyIncomings() {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    let total = 0;
+    
+    investments.forEach(inv => {
+        const endDate = new Date(inv.endDate);
+        if (endDate.getFullYear() === currentYear && endDate.getMonth() === currentMonth) {
+            const days = Math.ceil((inv.endDate - inv.startDate) / (1000 * 60 * 60 * 24));
+            const income = inv.amount * (inv.ratePercent / 100) * (days / 365);
+            total += income;
+        }
+    });
+    
+    return Math.round(total * 100) / 100;
+}
+
+    // --- Вспомогательные функции ---
+    function updateCardFilter() {
+        const select = document.getElementById('chartCardFilter');
+        if (!select) return;
+        select.innerHTML = '<option value="all">📊 Все карты (суммарно)</option>';
+        cards.forEach(card => { const option = document.createElement('option'); option.value = card.id; option.textContent = card.name; select.appendChild(option); });
+    }
+    
+    function daysDiff(date) { const today = new Date(); today.setHours(0,0,0,0); return Math.floor((date.getTime() - today.getTime()) / (1000*3600*24)); }
+    function getDaysClass(days) { if (days<=1) return 'days-negative'; if (days<=2) return 'days-0-3'; if (days<=3) return 'days-4-7'; return 'days-more'; }
+    function getProgressPercent(days) { if (days<=0) return 100; if (days>=30) return 0; return Math.floor(100 - (days/30)*100); }
+    function formatDate(date) { if (!date) return '—'; return new Date(date).toLocaleDateString('ru-RU'); }
+    
+    function updateSummary() {
+        let totalLimit=0, totalBalance=0, totalMinThisMonth=0;
+        const now=new Date(), currentMonth=now.getMonth(), currentYear=now.getFullYear();
+        cards.forEach(card=>{ totalLimit+=card.creditLimit; totalBalance+=card.balance; const minDate=new Date(card.minDueDate); if(minDate.getMonth()===currentMonth && minDate.getFullYear()===currentYear) totalMinThisMonth+=card.minPaymentAmount; });
+        document.getElementById('totalLimit').innerText=totalLimit.toLocaleString('ru-RU')+' ₽';
+        document.getElementById('totalBalance').innerText=totalBalance.toLocaleString('ru-RU')+' ₽';
+        document.getElementById('totalFree').innerText=(totalLimit-totalBalance).toLocaleString('ru-RU')+' ₽';
+        document.getElementById('totalMinPayments').innerText=totalMinThisMonth.toLocaleString('ru-RU')+' ₽';
+    }
+    
+    function showNotificationBanner(msg){ const b=document.createElement('div'); b.className='notification-banner'; b.innerText=msg; document.body.appendChild(b); setTimeout(()=>b.remove(),5000); }
+    function checkNearPayments(){ const near=cards.filter(c=>{ const d=daysDiff(new Date(c.minDueDate)); return d>=1 && d<=3; }); if(near.length) showNotificationBanner('⚠️ Скорые платежи:\n'+near.map(c=>`${c.name}: через ${daysDiff(new Date(c.minDueDate))} дн.`).join('\n')); }
+    
+    async function requestNotificationPermission(){ if('Notification' in window){ const p=await Notification.requestPermission(); notificationPermission=p==='granted'; if(notificationPermission){ showNotificationBanner('Уведомления включены!'); scheduleDailyNotifications(); }} else alert('Ваш браузер не поддерживает уведомления'); }
+    function scheduleDailyNotifications(){ const last=localStorage.getItem('lastNotifyDate'); const today=new Date().toDateString(); if(last!==today && notificationPermission){ sendPaymentReminders(); localStorage.setItem('lastNotifyDate',today); } }
+    function sendPaymentReminders(){ const upcoming=cards.filter(c=>{ const d=daysDiff(new Date(c.minDueDate)); return d>=0 && d<=3; }); if(upcoming.length && notificationPermission) new Notification('💳 Напоминание о платежах',{body: upcoming.map(c=>`${c.name}: ${daysDiff(new Date(c.minDueDate))} дн. до мин. платежа`).join('\n')}); }
+    
+    function markAsPaid(cardId){ const card=cards.find(c=>c.id===cardId); if(!card) return; const newBalance=Math.max(0, card.balance-card.minPaymentAmount); if(confirm(`Уменьшить остаток по карте "${card.name}" с ${card.balance.toLocaleString('ru-RU')} ₽ на ${card.minPaymentAmount.toLocaleString('ru-RU')} ₽?\nНовый остаток: ${newBalance.toLocaleString('ru-RU')} ₽`)){ card.balance=newBalance; recordBalanceChange(cardId,newBalance); saveToStorage(); renderTable(); showNotificationBanner(`✅ Платёж по карте "${card.name}" засчитан!`); } }
+    
+    function recordBalanceChange(cardId, newBalance){ const now=new Date(); const currentMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; const idx=debtHistory.findIndex(e=>e.date===currentMonth); const snapshots=cards.map(c=>({cardId:c.id, balance:c.balance})); const total=cards.reduce((s,c)=>s+c.balance,0); if(idx!==-1){ debtHistory[idx].total=total; debtHistory[idx].cardSnapshots=snapshots; } else { debtHistory.push({date:currentMonth, total, cardSnapshots:snapshots}); } debtHistory.sort((a,b)=>a.date.localeCompare(b.date)); if(debtHistory.length>24) debtHistory=debtHistory.slice(-24); saveToStorage(); }
+    
+    function checkAndSaveMonthlyHistory(){ const now=new Date(); const currentMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; if(!debtHistory.some(e=>e.date===currentMonth) && cards.length){ const total=cards.reduce((s,c)=>s+c.balance,0); debtHistory.push({date:currentMonth, total, cardSnapshots:cards.map(c=>({cardId:c.id, balance:c.balance}))}); debtHistory.sort((a,b)=>a.date.localeCompare(b.date)); if(debtHistory.length>24) debtHistory=debtHistory.slice(-24); saveToStorage(); } }
+    
+    function renderChart(){ const filter=document.getElementById('chartCardFilter')?.value||'all'; const ctx=document.getElementById('debtChart').getContext('2d'); const last12Months=[]; const today=new Date(); for(let i=11;i>=0;i--){ const d=new Date(today.getFullYear(), today.getMonth()-i,1); last12Months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`); } let amounts=last12Months.map(month=>{ const entry=debtHistory.find(e=>e.date===month); if(filter==='all') return entry?entry.total:null; else{ const cardId=parseInt(filter); const snap=entry?.cardSnapshots?.find(s=>s.cardId===cardId); return snap?snap.balance:null; } }); let lastVal=0; for(let i=0;i<amounts.length;i++){ if(amounts[i]===null) amounts[i]=lastVal; else lastVal=amounts[i]; } const labels=last12Months.map(m=>{ const [y,mo]=m.split('-'); return `${mo}.${y.slice(2)}`; }); if(chartInstance) chartInstance.destroy(); chartInstance=new Chart(ctx,{type:'line',data:{labels, datasets:[{label:filter==='all'?'Общий долг (все карты)':cards.find(c=>c.id==filter)?.name+' (долг)', data:amounts, borderColor:'#e74c3c', backgroundColor:'rgba(231,76,60,0.1)', borderWidth:3, pointRadius:5, pointBackgroundColor:'#2980b9', fill:true, tension:0.2}]}, options:{responsive:true, plugins:{tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw.toLocaleString('ru-RU')} ₽`}}}, scales:{y:{ticks:{callback:val=>val.toLocaleString('ru-RU')+' ₽'}}}} }); }
+    
+    function renderCalendar(){ const today=new Date(); const year=today.getFullYear(), month=today.getMonth(); const firstDay=new Date(year,month,1); let startDayOfWeek=firstDay.getDay()||7; const daysInMonth=new Date(year,month+1,0).getDate(); let html=`<div style="text-align:center;margin-bottom:15px;"><button id="prevMonth">◀</button><span style="margin:0 20px;">${today.toLocaleDateString('ru-RU',{month:'long',year:'numeric'})}</span><button id="nextMonth">▶</button></div><div class="calendar">`; const weekdays=['Пн','Вт','Ср','Чт','Пт','Сб','Вс']; weekdays.forEach(d=>html+=`<div class="calendar-header">${d}</div>`); let emptyCells=(startDayOfWeek+6)%7; for(let i=0;i<emptyCells;i++) html+=`<div class="calendar-day other-month"></div>`; for(let d=1;d<=daysInMonth;d++){ const curDate=new Date(year,month,d); const isToday=curDate.toDateString()===today.toDateString(); let dayClass='calendar-day'+(isToday?' today':''); let events=''; cards.forEach(card=>{ const minDate=new Date(card.minDueDate); const fullDate=new Date(card.fullDueDate); if(minDate.getDate()===d && minDate.getMonth()===month && minDate.getFullYear()===year) events+=`<div class="calendar-event min" title="Мин. платёж: ${card.minPaymentAmount} ₽">💸 ${card.name}</div>`; if(fullDate.getDate()===d && fullDate.getMonth()===month && fullDate.getFullYear()===year) events+=`<div class="calendar-event full" title="Полное погашение">🏦 ${card.name}</div>`; }); html+=`<div class="${dayClass}"><strong>${d}</strong>${events}</div>`; } let remaining=42-(emptyCells+daysInMonth); for(let i=0;i<remaining;i++) html+=`<div class="calendar-day other-month"></div>`; html+=`</div>`; document.getElementById('calendarView').innerHTML=html; document.getElementById('prevMonth')?.addEventListener('click',()=>{ today.setMonth(today.getMonth()-1); renderCalendar(); }); document.getElementById('nextMonth')?.addEventListener('click',()=>{ today.setMonth(today.getMonth()+1); renderCalendar(); }); }
+    
+    function renderTable(){ const sorted=[...cards].sort((a,b)=>{ let aVal=a[sortField], bVal=b[sortField]; if(sortField==='minDueDate'||sortField==='fullDueDate'){ aVal=new Date(aVal).getTime(); bVal=new Date(bVal).getTime(); } if(typeof aVal==='string'){ aVal=aVal.toLowerCase(); bVal=bVal.toLowerCase(); } if(aVal<bVal) return sortDirection==='asc'?-1:1; if(aVal>bVal) return sortDirection==='asc'?1:-1; return 0; }); const tbody=document.getElementById('cardsTableBody'); if(!sorted.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="11">Нет карт. Нажмите «Добавить карту»</td>'; return; } tbody.innerHTML=''; sorted.forEach(card=>{ const daysToMin=daysDiff(new Date(card.minDueDate)), daysToFull=daysDiff(new Date(card.fullDueDate)); const row=tbody.insertRow(); row.insertCell(0).innerText=card.name; row.insertCell(1).innerText=card.creditLimit.toLocaleString('ru-RU')+' ₽'; row.insertCell(2).innerText=card.balance.toLocaleString('ru-RU')+' ₽'; // Проверка на приближение даты выписки
+let statementCell = row.insertCell(3);
+let statementDate = card.statementDate;
+if (statementDate) {
+    const daysToStatement = daysDiff(new Date(statementDate));
+    if (daysToStatement >= 0 && daysToStatement <= 1) {
+        statementCell.innerHTML = `<span style="color: #e74c3c;">${formatDate(statementDate)}</span>`;
+    } else if (daysToStatement < 0) {
+        statementCell.innerHTML = `<span style="color: #95a5a6;">${formatDate(statementDate)}</span>`;
+    } else {
+        statementCell.innerText = formatDate(statementDate);
+    }
+} else {
+    statementCell.innerText = '—';
+}; row.insertCell(4).innerText=card.minPaymentAmount.toLocaleString('ru-RU')+' ₽'; row.insertCell(5).innerText=formatDate(card.minDueDate); row.insertCell(6).innerHTML=`<span class="days-badge ${getDaysClass(daysToMin)}">${daysToMin} дн.</span>`; row.insertCell(7).innerText=formatDate(card.fullDueDate); row.insertCell(8).innerHTML=`<span class="days-badge ${getDaysClass(daysToFull)}">${daysToFull} дн.</span>`; row.insertCell(9).innerHTML=`<div style="display:flex; flex-direction:column; gap:4px;"><div class="progress-container"><div class="progress-bar" style="width:${getProgressPercent(daysToMin)}%; background:#e67e22;"></div></div><div class="progress-container"><div class="progress-bar" style="width:${getProgressPercent(daysToFull)}%; background:#2980b9;"></div></div></div>`; row.insertCell(10).innerHTML=`<div class="action-icons"><span class="edit-icon" data-id="${card.id}">✏️</span><span class="pay-icon" data-id="${card.id}" title="Погасить мин. платёж">✅</span><span class="delete-icon" data-id="${card.id}">🗑️</span></div>`; }); document.querySelectorAll('.edit-icon').forEach(icon=>icon.addEventListener('click',()=>openEditModal(parseInt(icon.dataset.id)))); document.querySelectorAll('.pay-icon').forEach(icon=>icon.addEventListener('click',()=>markAsPaid(parseInt(icon.dataset.id)))); document.querySelectorAll('.delete-icon').forEach(icon=>icon.addEventListener('click',()=>{ if(confirm('Удалить карту?')){ cards=cards.filter(c=>c.id!==parseInt(icon.dataset.id)); saveToStorage(); renderTable(); } })); }
+    
+    function initSorting(){ document.querySelectorAll('th[data-sort]').forEach(th=>{ th.addEventListener('click',()=>{ const field=th.dataset.sort; if(sortField===field) sortDirection=sortDirection==='asc'?'desc':'asc'; else{ sortField=field; sortDirection='asc'; } renderTable(); }); }); }
+    
+    function openEditModal(id){ const card=cards.find(c=>c.id===id); if(!card) return; document.getElementById('modalTitle').innerText='Редактировать карту'; document.getElementById('cardId').value=card.id; document.getElementById('cardName').value=card.name; document.getElementById('creditLimit').value=card.creditLimit; document.getElementById('balance').value=card.balance; document.getElementById('statementDate').value=card.statementDate?card.statementDate.toISOString().slice(0,10):''; document.getElementById('minDueDate').value=new Date(card.minDueDate).toISOString().slice(0,10); document.getElementById('fullDueDate').value=new Date(card.fullDueDate).toISOString().slice(0,10); document.getElementById('minPaymentAmount').value=card.minPaymentAmount; document.getElementById('cardModal').style.display='flex'; }
+    
+    function openAddModal(){ document.getElementById('modalTitle').innerText='Добавить карту'; document.getElementById('cardId').value=''; document.getElementById('cardForm').reset(); document.getElementById('cardModal').style.display='flex'; }
+    
+    function saveCardFromForm(){ const name=document.getElementById('cardName').value.trim(); if(!name){ alert('Введите название'); return false; } const limit=parseFloat(document.getElementById('creditLimit').value)||0; const bal=parseFloat(document.getElementById('balance').value)||0; const stDate=document.getElementById('statementDate').value?new Date(document.getElementById('statementDate').value):null; const minDue=new Date(document.getElementById('minDueDate').value); const fullDue=new Date(document.getElementById('fullDueDate').value); const minPay=parseFloat(document.getElementById('minPaymentAmount').value)||0; if(isNaN(minDue)||isNaN(fullDue)){ alert('Укажите даты'); return false; } const idVal=document.getElementById('cardId').value; if(!idVal){ const newId=cards.length?Math.max(...cards.map(c=>c.id))+1:1; cards.push({id:newId, name, creditLimit:limit, balance:bal, statementDate:stDate, minDueDate:minDue, fullDueDate:fullDue, minPaymentAmount:minPay}); recordBalanceChange(newId,bal); }else{ const idx=cards.findIndex(c=>c.id===parseInt(idVal)); if(idx!==-1){ cards[idx]={...cards[idx], name, creditLimit:limit, balance:bal, statementDate:stDate, minDueDate:minDue, fullDueDate:fullDue, minPaymentAmount:minPay}; recordBalanceChange(parseInt(idVal),bal); } } saveToStorage(); renderTable(); document.getElementById('cardModal').style.display='none'; return true; }
+
+    // ==================== ФУНКЦИИ ДЛЯ ВКЛАДОВ (ИНВЕСТИЦИЙ) ====================
+    
+    function calculateIncome(amount, rate, startDate, endDate) {
+        const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+        if (days <= 0) return 0;
+        return Math.round(amount * (rate / 100) * (days / 365) * 100) / 100;
+    }
+    
+    function getColorForId(id) {
+        const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#16a085', '#27ae60', '#2980b9', '#8e44ad'];
+        return colors[(id - 1) % colors.length];
+    }
+    
+    // Рендер Timeline (визуальное распределение по времени) - с названиями и суммами
+function renderTimeline() {
+    if (investments.length === 0) {
+        document.getElementById('timelineChart').innerHTML = '<p style="text-align:center; padding:20px; color:#999;">Нет вкладов для отображения</p>';
+        return;
+    }
+    
+    const allDates = [];
+    investments.forEach(inv => {
+        allDates.push(inv.startDate);
+        allDates.push(inv.endDate);
+    });
+    const minDate = new Date(Math.min(...allDates));
+    const maxDate = new Date(Math.max(...allDates));
+    const timeRange = maxDate - minDate;
+    const startX = new Date(minDate.getTime() - timeRange * 0.05);
+    const endX = new Date(maxDate.getTime() + timeRange * 0.05);
+    const totalDays = (endX - startX) / (1000 * 60 * 60 * 24);
+    
+    const months = [];
+    let curMonth = new Date(startX);
+    curMonth.setDate(1);
+    curMonth.setHours(0, 0, 0, 0);
+    
+    while (curMonth <= endX) {
+        const monthStart = new Date(curMonth);
+        const monthEnd = new Date(curMonth);
+        monthEnd.setMonth(monthEnd.getMonth() + 1);
+        monthEnd.setDate(0);
+        monthEnd.setHours(23, 59, 59, 999);
+        
+        const startPercent = Math.max(0, ((monthStart - startX) / (1000 * 60 * 60 * 24)) / totalDays * 100);
+        const endPercent = Math.min(100, ((monthEnd - startX) / (1000 * 60 * 60 * 24)) / totalDays * 100);
+        const width = endPercent - startPercent;
+        
+        months.push({
+            date: new Date(curMonth),
+            label: curMonth.toLocaleDateString('ru-RU', { month: 'short' }).replace(/^./, function(str){ return str.toUpperCase(); }) + ' ' + curMonth.getFullYear().toString().slice(2),
+            fullLabel: curMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }),
+            startPercent: startPercent,
+            width: width
+        });
+        curMonth.setMonth(curMonth.getMonth() + 1);
+    }
+    
+    let html = '<div class="timeline-bar">';
+    
+    // Заголовок с месяцами
+    html += '<div class="timeline-row timeline-header" style="margin-bottom: 5px;">';
+    html += '<div class="timeline-label" style="font-weight: bold; opacity: 0.7; font-size: 11px;">Период</div>';
+    html += '<div class="timeline-track-header" style="display: flex; flex: 1; height: 22px; border-radius: 6px; overflow: hidden; position: relative;">';
+    
+    months.forEach((month, idx) => {
+        const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#e9ecef';
+        html += `<div style="width: ${month.width}%; background: ${bgColor}; text-align: center; font-size: 9px; font-weight: 500; color: #2c3e50; display: flex; align-items: center; justify-content: center; border-right: 1px solid #dee2e6;" title="${month.fullLabel}">
+                    ${month.label}
+                </div>`;
+    });
+    html += '</div></div>';
+    
+    // Строки вкладов
+    investments.forEach(inv => {
+        const startPercent = Math.max(0, ((inv.startDate - startX) / (1000 * 60 * 60 * 24)) / totalDays * 100);
+        const endPercent = Math.min(100, ((inv.endDate - startX) / (1000 * 60 * 60 * 24)) / totalDays * 100);
+        const width = endPercent - startPercent;
+        const color = getColorForId(inv.id);
+        const daysTotal = Math.ceil((inv.endDate - inv.startDate) / (1000 * 60 * 60 * 24));
+        const daysPassed = Math.max(0, Math.min(daysTotal, Math.ceil((new Date() - inv.startDate) / (1000 * 60 * 60 * 24))));
+        
+        // Формируем текст для отображения на полосе в зависимости от ширины
+        let displayText = '';
+        if (width > 10) {
+            let shortName = inv.name.length > 12 ? inv.name.slice(0, 15) + '..' : inv.name;
+            displayText = shortName + ' ' + inv.amount.toLocaleString('ru-RU') + '₽';
+        } else if (width > 10) {
+            let shortName = inv.name.length > 7 ? inv.name.slice(0, 10) + '..' : inv.name;
+            displayText = shortName;
+        } else if (width > 5) {
+            displayText = inv.amount.toLocaleString('ru-RU') + '₽';
+        } else {
+            displayText = '';
+        }
+        
+        html += `<div class="timeline-row" style="margin-bottom: 6px;">
+            <div class="timeline-label" title="${inv.name}">
+                <strong>${escapeHtml(inv.name)}</strong><br>
+                <small style="color:#666;">${inv.amount.toLocaleString('ru-RU')} ₽</small>
+            </div>
+            <div class="timeline-track" data-start="${inv.startDate.toLocaleDateString('ru-RU')}" data-end="${inv.endDate.toLocaleDateString('ru-RU')}" data-days="${daysTotal}" data-passed="${daysPassed}" style="position: relative;">
+                <div class="timeline-fill" style="width: ${width}%; margin-left: ${startPercent}%; background: ${color}; font-size: ${width > 20 ? '11px' : '11px'};">
+                    ${displayText}
+                </div>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    
+    document.getElementById('timelineChart').innerHTML = html;
+}    
+    // Рендер карточек вкладов (С ПРОГРЕСС-БАРОМ)
+    function renderCardsView() {
+        const container = document.getElementById('investmentsCardsView');
+        if (!container) return;
+        
+        if (investments.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:40px; color:#999;">Нет вкладов. Нажмите «Добавить вклад»</p>';
+            return;
+        }
+        
+        let html = '';
+        investments.forEach(inv => {
+            const start = new Date(inv.startDate);
+            const end = new Date(inv.endDate);
+            const today = new Date();
+            const totalDays = (end - start) / (1000 * 60 * 60 * 24);
+            const elapsedDays = Math.max(0, Math.min(totalDays, (today - start) / (1000 * 60 * 60 * 24)));
+            const progressPercent = totalDays > 0 ? (elapsedDays / totalDays) * 100 : 0;
+            const remainingDays = Math.max(0, totalDays - elapsedDays);
+            const income = calculateIncome(inv.amount, inv.ratePercent, start, end);
+            const dailyIncome = inv.amount * (inv.ratePercent / 100) / 365;
+            const color = getColorForId(inv.id);
+            
+            html += `
+                <div class="investment-card" style="border-left-color: ${color};">
+                    <div class="card-header">
+                        <div class="card-title">${escapeHtml(inv.name)}</div>
+                        <div class="card-actions">
+                            <button class="edit-inv-btn btn-sm" data-id="${inv.id}">✏️ Редактировать</button>
+                            <button class="delete-inv-btn btn-sm btn-danger" data-id="${inv.id}">🗑️ Удалить</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-info">
+                            <div class="info-row">
+                                <span class="info-label">💰 Сумма:</span>
+                                <span class="info-value">${inv.amount.toLocaleString('ru-RU')} ₽</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">📈 Ставка:</span>
+                                <span class="info-value"><span class="badge-rate">${inv.ratePercent}% годовых</span></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">📅 Период:</span>
+                                <span class="info-value">${start.toLocaleDateString('ru-RU')} → ${end.toLocaleDateString('ru-RU')}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">⏱️ Длительность:</span>
+                                <span class="info-value">${Math.floor(totalDays)} дней (${Math.floor(totalDays/30)} мес.)</span>
+                            </div>
+                            ${inv.comment ? `<div class="comment-text">📝 ${escapeHtml(inv.comment)}</div>` : ''}
+                        </div>
+                        <div class="card-stats">
+                            <div class="progress-time">
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: ${progressPercent}%; background: ${color};"></div>
+                                </div>
+                                <div class="progress-text">
+                                    📊 Прогресс: ${progressPercent.toFixed(1)}% (${Math.floor(elapsedDays)} из ${Math.floor(totalDays)} дней)
+                                </div>
+                                <div class="progress-text">
+                                    ⏳ Осталось: ${Math.floor(remainingDays)} дней
+                                </div>
+                            </div>
+                            <div style="margin-top: 12px;">
+                                <div class="stat-value">+${income.toLocaleString('ru-RU')} ₽</div>
+                                <div class="stat-label">ожидаемый доход за весь период</div>
+                            </div>
+                            <div style="margin-top: 8px;">
+                                <span class="badge-days">≈ ${dailyIncome.toLocaleString('ru-RU')} ₽/день</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        
+        document.querySelectorAll('.edit-inv-btn').forEach(btn => {
+            btn.addEventListener('click', () => openInvestmentModal(parseInt(btn.dataset.id)));
+        });
+        document.querySelectorAll('.delete-inv-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (confirm('Удалить вклад?')) {
+                    investments = investments.filter(i => i.id !== parseInt(btn.dataset.id));
+                    saveToStorage();
+                    renderInvestments();
+                }
+            });
+        });
+    }
+    
+    // Рендер таблицы вкладов (с Timeline)
+    function renderTableView() {
+        const tbody = document.getElementById('investmentsTableBody');
+        if (!tbody) return;
+        
+        // Обновляем Timeline
+        renderTimeline();
+        
+        if (investments.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Нет вкладов. Нажмите «Добавить вклад»</td>';
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        investments.forEach(inv => {
+            const days = Math.ceil((inv.endDate - inv.startDate) / (1000 * 60 * 60 * 24));
+            const income = calculateIncome(inv.amount, inv.ratePercent, inv.startDate, inv.endDate);
+            const row = tbody.insertRow();
+            row.insertCell(0).innerText = inv.name;
+            row.insertCell(1).innerText = inv.amount.toLocaleString('ru-RU') + ' ₽';
+            row.insertCell(2).innerText = inv.ratePercent + '%';
+            row.insertCell(3).innerText = inv.startDate.toLocaleDateString('ru-RU');
+            row.insertCell(4).innerText = inv.endDate.toLocaleDateString('ru-RU');
+            row.insertCell(5).innerText = days;
+            row.insertCell(6).innerHTML = `<strong style="color: #27ae60;">+${income.toLocaleString('ru-RU')} ₽</strong>`;
+            row.insertCell(7).innerText = (inv.amount + income).toLocaleString('ru-RU') + ' ₽';
+            row.insertCell(8).innerHTML = `<div class="action-icons"><span class="edit-icon" data-id="${inv.id}">✏️</span><span class="delete-icon" data-id="${inv.id}">🗑️</span></div>`;
+        });
+        
+        document.querySelectorAll('#investmentsTableBody .edit-icon').forEach(icon => {
+            icon.addEventListener('click', () => openInvestmentModal(parseInt(icon.dataset.id)));
+        });
+        document.querySelectorAll('#investmentsTableBody .delete-icon').forEach(icon => {
+            icon.addEventListener('click', () => {
+                if (confirm('Удалить вклад?')) {
+                    investments = investments.filter(i => i.id !== parseInt(icon.dataset.id));
+                    saveToStorage();
+                    renderInvestments();
+                }
+            });
+        });
+    }
+    
+    function renderInvestmentsPieChart() {
+        const ctx = document.getElementById('investmentsPieChart')?.getContext('2d');
+        if (!ctx) return;
+        const labels = investments.map(i => i.name.length > 20 ? i.name.slice(0, 17) + '...' : i.name);
+        const data = investments.map(i => i.amount);
+        if (pieChartInstance) pieChartInstance.destroy();
+        if (investments.length === 0) {
+            pieChartInstance = new Chart(ctx, { type: 'pie', data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#ccc'] }] }, options: { plugins: { tooltip: { callbacks: { label: () => 'Нет вложений' } } } } });
+            return;
+        }
+        pieChartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: { labels, datasets: [{ data, backgroundColor: investments.map(i => getColorForId(i.id)), borderWidth: 0 }] },
+            options: { responsive: true, plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw.toLocaleString('ru-RU')} ₽ (${((ctx.raw / data.reduce((a,b)=>a+b,0))*100).toFixed(1)}%)` } } } }
+        });
+    }
+    
+    function renderInvestments() {
+        renderCardsView();
+        renderTableView();
+        renderInvestmentsPieChart();
+        updateOverallNetworth();
+        
+        const cardsView = document.getElementById('investmentsCardsView');
+        const tableView = document.getElementById('investmentsTableView');
+        if (viewMode === 'cards') {
+            cardsView.style.display = 'flex';
+            tableView.style.display = 'none';
+        } else {
+            cardsView.style.display = 'none';
+            tableView.style.display = 'block';
+        }
+    }
+    
+    function openInvestmentModal(id = null) {
+        const modal = document.getElementById('investmentModal');
+        const title = document.getElementById('investmentModalTitle');
+        if (id !== null) {
+            const inv = investments.find(i => i.id === id);
+            if (!inv) return;
+            title.innerText = 'Редактировать вклад';
+            document.getElementById('investmentId').value = inv.id;
+            document.getElementById('invName').value = inv.name;
+            document.getElementById('invAmount').value = inv.amount;
+            document.getElementById('invRate').value = inv.ratePercent;
+            document.getElementById('invStartDate').value = new Date(inv.startDate).toISOString().slice(0, 10);
+            document.getElementById('invEndDate').value = new Date(inv.endDate).toISOString().slice(0, 10);
+            document.getElementById('invComment').value = inv.comment || '';
+        } else {
+            title.innerText = 'Добавить вклад';
+            document.getElementById('investmentId').value = '';
+            document.getElementById('investmentForm').reset();
+        }
+        modal.style.display = 'flex';
+    }
+    
+    function saveInvestmentFromForm() {
+        const id = document.getElementById('investmentId').value;
+        const name = document.getElementById('invName').value.trim();
+        if (!name) { alert('Введите название'); return false; }
+        const amount = parseFloat(document.getElementById('invAmount').value);
+        const rate = parseFloat(document.getElementById('invRate').value);
+        const startDate = new Date(document.getElementById('invStartDate').value);
+        const endDate = new Date(document.getElementById('invEndDate').value);
+        const comment = document.getElementById('invComment').value;
+        if (isNaN(amount) || amount <= 0) { alert('Сумма должна быть положительной'); return false; }
+        if (isNaN(rate) || rate < 0) { alert('Ставка должна быть неотрицательной'); return false; }
+        if (isNaN(startDate) || isNaN(endDate) || startDate >= endDate) { alert('Дата начала должна быть раньше даты окончания'); return false; }
+        if (!id) {
+            const newId = investments.length ? Math.max(...investments.map(i => i.id)) + 1 : 1;
+            investments.push({ id: newId, name, amount, ratePercent: rate, startDate, endDate, comment });
+        } else {
+            const idx = investments.findIndex(i => i.id === parseInt(id));
+            if (idx !== -1) {
+                investments[idx] = { ...investments[idx], name, amount, ratePercent: rate, startDate, endDate, comment };
+            }
+        }
+        saveToStorage();
+        renderInvestments();
+        document.getElementById('investmentModal').style.display = 'none';
+        return true;
+    }
+    
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+
+    // --- Инициализация вкладок и событий ---
+    function initTabs() {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                const tabId = btn.dataset.tab + 'Tab';
+                document.getElementById(tabId).classList.add('active');
+                if (btn.dataset.tab === 'calendar') renderCalendar();
+                if (btn.dataset.tab === 'chart') renderChart();
+                if (btn.dataset.tab === 'investments') renderInvestments();
+            });
+        });
+    }
+    
+    function initViewToggle() {
+        const viewCardsBtn = document.getElementById('viewCardsBtn');
+        const viewTableBtn = document.getElementById('viewTableBtn');
+        
+        viewCardsBtn?.addEventListener('click', () => {
+            viewMode = 'cards';
+            viewCardsBtn.classList.add('active');
+            viewTableBtn.classList.remove('active');
+            document.getElementById('investmentsCardsView').style.display = 'flex';
+            document.getElementById('investmentsTableView').style.display = 'none';
+        });
+        
+        viewTableBtn?.addEventListener('click', () => {
+            viewMode = 'table';
+            viewTableBtn.classList.add('active');
+            viewCardsBtn.classList.remove('active');
+            document.getElementById('investmentsCardsView').style.display = 'none';
+            document.getElementById('investmentsTableView').style.display = 'block';
+            renderTableView();
+        });
+    }
+
+    // События
+    document.getElementById('addCardBtn')?.addEventListener('click', openAddModal);
+    document.getElementById('modalCancel')?.addEventListener('click', () => document.getElementById('cardModal').style.display = 'none');
+    document.getElementById('cardForm')?.addEventListener('submit', (e) => { e.preventDefault(); saveCardFromForm(); });
+    document.getElementById('enableNotificationsBtn')?.addEventListener('click', requestNotificationPermission);
+    document.getElementById('exportBtn')?.addEventListener('click', () => { const dataStr = JSON.stringify({ cards, debtHistory, investments }, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'finance_data.json'; a.click(); URL.revokeObjectURL(url); });
+    document.getElementById('refreshChartBtn')?.addEventListener('click', () => renderChart());
+    document.getElementById('resetHistoryBtn')?.addEventListener('click', () => { if (confirm('Сбросить историю долга?')) { debtHistory = []; saveToStorage(); renderChart(); showNotificationBanner('История долга сброшена'); } });
+    document.getElementById('chartCardFilter')?.addEventListener('change', () => renderChart());
+    document.getElementById('addInvestmentBtn')?.addEventListener('click', () => openInvestmentModal());
+    document.getElementById('investmentModalCancel')?.addEventListener('click', () => document.getElementById('investmentModal').style.display = 'none');
+    document.getElementById('investmentForm')?.addEventListener('submit', (e) => { e.preventDefault(); saveInvestmentFromForm(); });
+    window.addEventListener('click', (e) => { if (e.target === document.getElementById('cardModal')) document.getElementById('cardModal').style.display = 'none'; if (e.target === document.getElementById('investmentModal')) document.getElementById('investmentModal').style.display = 'none'; });
+// Импорт данных из JSON-файла (с флешки)
+document.getElementById('importDataBtn')?.addEventListener('click', () => {
+    document.getElementById('importFileInput').click();
+});
+
+document.getElementById('importFileInput')?.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            // Восстанавливаем данные
+            if (importedData.cards) {
+                cards = importedData.cards;
+                cards.forEach(c => {
+                    c.statementDate = c.statementDate ? new Date(c.statementDate) : null;
+                    c.minDueDate = new Date(c.minDueDate);
+                    c.fullDueDate = new Date(c.fullDueDate);
+                });
+            }
+            if (importedData.investments) {
+                investments = importedData.investments;
+                investments.forEach(i => {
+                    i.startDate = new Date(i.startDate);
+                    i.endDate = new Date(i.endDate);
+                });
+            }
+            if (importedData.tasks) {
+                tasks = importedData.tasks;
+                tasks.forEach(t => t.dueDate = new Date(t.dueDate));
+            }
+            if (importedData.portfolioOperations) {
+                portfolioOperations = importedData.portfolioOperations;
+                portfolioOperations.forEach(op => op.date = new Date(op.date));
+            }
+            if (importedData.debtHistory) {
+                debtHistory = importedData.debtHistory;
+            }
+            
+            // Сохраняем в localStorage и обновляем интерфейс
+            saveToStorage();
+            if (typeof savePortfolioData === 'function') savePortfolioData();
+            if (typeof renderPortfolioTable === 'function') renderPortfolioTable();
+            if (typeof updatePortfolioStats === 'function') updatePortfolioStats();
+            if (typeof renderPortfolioCharts === 'function') renderPortfolioCharts();
+            renderTable();
+            renderInvestments();
+            
+            // Проверяем, существует ли функция renderTasks, перед вызовом
+            if (typeof renderTasks === 'function') {
+                renderTasks();
+            }
+            
+            updateOverallNetworth();
+            
+            showNotificationBanner('✅ Данные успешно импортированы с флешки!');
+        } catch (err) {
+            alert('Ошибка при чтении файла: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+});
+    
+    loadFromStorage();
+    initSorting();
+    initTabs();
+    initViewToggle();
+    if ('Notification' in window && Notification.permission === 'granted') { notificationPermission = true; scheduleDailyNotifications(); }
+</script>
+</body>
+</html>

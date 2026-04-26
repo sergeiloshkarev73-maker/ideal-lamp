@@ -1,0 +1,378 @@
+{
+  "cards": [
+    {
+      "id": 1,
+      "name": "ВТБ №1",
+      "creditLimit": 100000,
+      "balance": 100000,
+      "statementDate": "2026-05-01T00:00:00.000Z",
+      "minDueDate": "2026-05-20T00:00:00.000Z",
+      "fullDueDate": "2026-07-20T00:00:00.000Z",
+      "minPaymentAmount": 300000
+    },
+    {
+      "id": 2,
+      "name": "ВТБ № 2",
+      "creditLimit": 100000,
+      "balance": 100000,
+      "statementDate": "2026-05-01T00:00:00.000Z",
+      "minDueDate": "2026-05-20T00:00:00.000Z",
+      "fullDueDate": "2026-07-20T00:00:00.000Z",
+      "minPaymentAmount": 100000
+    },
+    {
+      "id": 3,
+      "name": "ВТБ №3",
+      "creditLimit": 21000,
+      "balance": 5000,
+      "statementDate": "2026-05-01T00:00:00.000Z",
+      "minDueDate": "2026-05-20T00:00:00.000Z",
+      "fullDueDate": "2026-07-20T00:00:00.000Z",
+      "minPaymentAmount": 21000
+    },
+    {
+      "id": 4,
+      "name": "ВТБ Настя 1752",
+      "creditLimit": 100000,
+      "balance": 50000,
+      "statementDate": "2026-05-01T00:00:00.000Z",
+      "minDueDate": "2026-05-20T00:00:00.000Z",
+      "fullDueDate": "2026-05-20T00:00:00.000Z",
+      "minPaymentAmount": 100000
+    },
+    {
+      "id": 5,
+      "name": "Совкомбанк ( Настя )",
+      "creditLimit": 100000,
+      "balance": 100000,
+      "statementDate": null,
+      "minDueDate": "2026-05-06T00:00:00.000Z",
+      "fullDueDate": "2026-05-06T00:00:00.000Z",
+      "minPaymentAmount": 66749
+    },
+    {
+      "id": 6,
+      "name": "ОТП ( Настя )",
+      "creditLimit": 15000,
+      "balance": 15000,
+      "statementDate": "2026-05-01T00:00:00.000Z",
+      "minDueDate": "2026-04-27T00:00:00.000Z",
+      "fullDueDate": "2026-05-27T00:00:00.000Z",
+      "minPaymentAmount": 500
+    },
+    {
+      "id": 7,
+      "name": "ОТП 120 дней",
+      "creditLimit": 120000,
+      "balance": 120000,
+      "statementDate": null,
+      "minDueDate": "2026-05-05T00:00:00.000Z",
+      "fullDueDate": "2026-08-01T00:00:00.000Z",
+      "minPaymentAmount": 2400
+    },
+    {
+      "id": 8,
+      "name": "Tinkoff \"Drive\"",
+      "creditLimit": 133000,
+      "balance": 133000,
+      "statementDate": "2026-04-26T00:00:00.000Z",
+      "minDueDate": "2026-05-19T00:00:00.000Z",
+      "fullDueDate": "2026-05-19T00:00:00.000Z",
+      "minPaymentAmount": 0
+    },
+    {
+      "id": 9,
+      "name": "Tinkoff \"Platinym\"",
+      "creditLimit": 45000,
+      "balance": 45000,
+      "statementDate": null,
+      "minDueDate": "2026-05-15T00:00:00.000Z",
+      "fullDueDate": "2026-05-15T00:00:00.000Z",
+      "minPaymentAmount": 45000
+    },
+    {
+      "id": 10,
+      "name": "Tinkoff \" Platinym''( Настя )",
+      "creditLimit": 170000,
+      "balance": 169000,
+      "statementDate": null,
+      "minDueDate": "2026-05-14T00:00:00.000Z",
+      "fullDueDate": "2026-05-14T00:00:00.000Z",
+      "minPaymentAmount": 100000
+    },
+    {
+      "id": 11,
+      "name": "Альфа  № 1 ( Настя ) 3559",
+      "creditLimit": 66000,
+      "balance": 50000,
+      "statementDate": null,
+      "minDueDate": "2026-05-17T00:00:00.000Z",
+      "fullDueDate": "2026-05-17T00:00:00.000Z",
+      "minPaymentAmount": 0
+    },
+    {
+      "id": 12,
+      "name": "Альфа  № 1  3647",
+      "creditLimit": 751000,
+      "balance": 750000,
+      "statementDate": null,
+      "minDueDate": "2026-04-27T00:00:00.000Z",
+      "fullDueDate": "2026-04-27T00:00:00.000Z",
+      "minPaymentAmount": 750000
+    },
+    {
+      "id": 13,
+      "name": "Альфа  № 2  5667",
+      "creditLimit": 375000,
+      "balance": 375000,
+      "statementDate": null,
+      "minDueDate": "2026-05-06T00:00:00.000Z",
+      "fullDueDate": "2026-05-06T00:00:00.000Z",
+      "minPaymentAmount": 374965
+    },
+    {
+      "id": 14,
+      "name": "Tinkoff  \"Кубышка\"",
+      "creditLimit": 10000,
+      "balance": 10000,
+      "statementDate": null,
+      "minDueDate": "2026-04-30T00:00:00.000Z",
+      "fullDueDate": "2026-04-30T00:00:00.000Z",
+      "minPaymentAmount": 10000
+    },
+    {
+      "id": 15,
+      "name": "Сбер  « 120 дней » (Настя)",
+      "creditLimit": 300000,
+      "balance": 300000,
+      "statementDate": null,
+      "minDueDate": "2026-04-30T00:00:00.000Z",
+      "fullDueDate": "2026-06-29T00:00:00.000Z",
+      "minPaymentAmount": 6000
+    },
+    {
+      "id": 16,
+      "name": "Сбер  « 120 дней »      9015",
+      "creditLimit": 630000,
+      "balance": 630000,
+      "statementDate": null,
+      "minDueDate": "2026-04-30T00:00:00.000Z",
+      "fullDueDate": "2026-06-24T00:00:00.000Z",
+      "minPaymentAmount": 12238
+    },
+    {
+      "id": 17,
+      "name": "Совкомбанк « Халва »",
+      "creditLimit": 120000,
+      "balance": 120000,
+      "statementDate": null,
+      "minDueDate": "2026-05-07T00:00:00.000Z",
+      "fullDueDate": "2026-05-07T00:00:00.000Z",
+      "minPaymentAmount": 46802
+    }
+  ],
+  "debtHistory": [
+    {
+      "date": "2026-04",
+      "total": 3072000,
+      "cardSnapshots": [
+        {
+          "cardId": 1,
+          "balance": 100000
+        },
+        {
+          "cardId": 2,
+          "balance": 100000
+        },
+        {
+          "cardId": 3,
+          "balance": 5000
+        },
+        {
+          "cardId": 4,
+          "balance": 50000
+        },
+        {
+          "cardId": 5,
+          "balance": 100000
+        },
+        {
+          "cardId": 6,
+          "balance": 15000
+        },
+        {
+          "cardId": 7,
+          "balance": 120000
+        },
+        {
+          "cardId": 8,
+          "balance": 133000
+        },
+        {
+          "cardId": 9,
+          "balance": 45000
+        },
+        {
+          "cardId": 10,
+          "balance": 169000
+        },
+        {
+          "cardId": 11,
+          "balance": 50000
+        },
+        {
+          "cardId": 12,
+          "balance": 750000
+        },
+        {
+          "cardId": 13,
+          "balance": 375000
+        },
+        {
+          "cardId": 14,
+          "balance": 10000
+        },
+        {
+          "cardId": 15,
+          "balance": 300000
+        },
+        {
+          "cardId": 16,
+          "balance": 630000
+        },
+        {
+          "cardId": 17,
+          "balance": 120000
+        }
+      ]
+    }
+  ],
+  "investments": [
+    {
+      "id": 1,
+      "name": "ПИФ Финуслуги",
+      "amount": 10000,
+      "ratePercent": 15.5,
+      "startDate": "2026-02-10T00:00:00.000Z",
+      "endDate": "2026-05-14T00:00:00.000Z",
+      "comment": "Денежный рынок"
+    },
+    {
+      "id": 2,
+      "name": "ПИФ Финуслуги Настя",
+      "amount": 10000,
+      "ratePercent": 15.5,
+      "startDate": "2026-02-06T00:00:00.000Z",
+      "endDate": "2026-05-10T00:00:00.000Z",
+      "comment": "Денежный рынок"
+    },
+    {
+      "id": 3,
+      "name": "ДОМ.РФ (Н)",
+      "amount": 500000,
+      "ratePercent": 15.8,
+      "startDate": "2026-04-03T00:00:00.000Z",
+      "endDate": "2026-06-03T00:00:00.000Z",
+      "comment": ""
+    },
+    {
+      "id": 4,
+      "name": "МКБ Финуслуги",
+      "amount": 80100,
+      "ratePercent": 14.5,
+      "startDate": "2026-03-07T00:00:00.000Z",
+      "endDate": "2026-06-15T00:00:00.000Z",
+      "comment": ""
+    },
+    {
+      "id": 5,
+      "name": "МКБ Финуслуги",
+      "amount": 69600,
+      "ratePercent": 15.2,
+      "startDate": "2026-02-07T00:00:00.000Z",
+      "endDate": "2026-05-14T00:00:00.000Z",
+      "comment": ""
+    },
+    {
+      "id": 6,
+      "name": "МКБ Финуслуги (Настя)",
+      "amount": 56205,
+      "ratePercent": 15.2,
+      "startDate": "2026-02-07T00:00:00.000Z",
+      "endDate": "2026-05-13T00:00:00.000Z",
+      "comment": ""
+    },
+    {
+      "id": 7,
+      "name": "Ингосстрах НСЖ \"Гарант доход\" (Настя)",
+      "amount": 300000,
+      "ratePercent": 16,
+      "startDate": "2026-03-01T00:00:00.000Z",
+      "endDate": "2026-07-01T00:00:00.000Z",
+      "comment": ""
+    },
+    {
+      "id": 8,
+      "name": "Альфа  НСЖ \"Front Knox\"",
+      "amount": 120000,
+      "ratePercent": 14.6,
+      "startDate": "2026-04-03T00:00:00.000Z",
+      "endDate": "2026-07-03T00:00:00.000Z",
+      "comment": ""
+    },
+    {
+      "id": 9,
+      "name": "МКБ Финуслуги",
+      "amount": 79850,
+      "ratePercent": 14.2,
+      "startDate": "2026-04-06T00:00:00.000Z",
+      "endDate": "2026-07-10T00:00:00.000Z",
+      "comment": ""
+    },
+    {
+      "id": 10,
+      "name": "ДОМ.РФ",
+      "amount": 200000,
+      "ratePercent": 19.7,
+      "startDate": "2025-05-05T00:00:00.000Z",
+      "endDate": "2026-05-05T00:00:00.000Z",
+      "comment": ""
+    },
+    {
+      "id": 11,
+      "name": "МКБ Финуслуги (Настя)",
+      "amount": 66800,
+      "ratePercent": 14.5,
+      "startDate": "2026-03-07T00:00:00.000Z",
+      "endDate": "2026-06-15T00:00:00.000Z",
+      "comment": ""
+    },
+    {
+      "id": 12,
+      "name": "Согаз НСЖ \"Точный расчет\"",
+      "amount": 200000,
+      "ratePercent": 7,
+      "startDate": "2026-04-20T00:00:00.000Z",
+      "endDate": "2026-08-20T00:00:00.000Z",
+      "comment": ""
+    },
+    {
+      "id": 13,
+      "name": "Альфа инвестиции",
+      "amount": 380000,
+      "ratePercent": 14.5,
+      "startDate": "2025-11-10T00:00:00.000Z",
+      "endDate": "2026-07-10T00:00:00.000Z",
+      "comment": "Денежный фонд"
+    },
+    {
+      "id": 14,
+      "name": "ДОМ.РФ накопительный",
+      "amount": 1000000,
+      "ratePercent": 14.9,
+      "startDate": "2026-04-01T00:00:00.000Z",
+      "endDate": "2026-05-01T00:00:00.000Z",
+      "comment": "Вклад пополняемый"
+    }
+  ]
+}
